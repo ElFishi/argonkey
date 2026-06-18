@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Argon2id Password Generator</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Generate strong, deterministic passwords from a master password using Argon2id. Stateless, offline-capable — no passwords are stored or transmitted.">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: #161b22;
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid #30363d;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        .header-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .header-icon {
+            width: auto;
+            height: 4.5rem;
+            flex-shrink: 0;
+        }
+        .header-text {
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+            color: #f0f6fc;
+            text-align: left;
+        }
+        .subtitle {
+            text-align: left;
+            color: #8b949e;
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+            color: #f0f6fc;
+        }
+        input {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            color: #f0f6fc;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+        }
+        input::placeholder {
+            color: #484f58;
+        }
+        .button-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .btn {
+            flex: 1;
+            padding: 0.7rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background: #238636;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #2ea043;
+        }
+        .btn-primary:disabled {
+            background: #1a5c2a;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .btn-secondary {
+            background: #21262d;
+            color: #c9d1d9;
+        }
+        .btn-secondary:hover {
+            background: #30363d;
+        }
+        
+        .copy-btn {
+            background: none;
+            border: none;
+            color: #58a6ff;
+            cursor: pointer;
+            padding: 0.4rem;
+            border-radius: 4px;
+            transition: background 0.2s, color 0.2s;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .copy-btn:hover {
+            background: #21262d;
+            color: #79c0ff;
+        }
+        .copy-btn .icon {
+            width: 1.15rem;
+            height: 1.15rem;
+            fill: currentColor; 
+        }
+
+        .result-area {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #0d1117;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .result-area .hash-display {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            color: #f0f6fc;
+            flex: 1;
+        }
+        .result-area .hash-display.placeholder {
+            color: #484f58;
+            font-style: italic;
+        }
+        .error-msg {
+            color: #f85149;
+            font-size: 0.85rem;
+            margin-top: 0.4rem;
+            min-height: 1.2rem;
+        }
+        .status-msg {
+            color: #d29922;
+            font-size: 0.85rem;
+            margin-top: 0.4rem;
+            min-height: 1.2rem;
+            text-align: center;
+        }
+        .footer {
+            margin-top: 1.5rem;
+            font-size: 0.7rem;
+            color: #484f58;
+            text-align: center;
+            border-top: 1px solid #21262d;
+            padding-top: 1rem;
+        }
+        .params-info {
+            font-size: 0.75rem;
+            color: #484f58;
+            text-align: center;
+            margin-top: 0.5rem;
+            background: #0d1117;
+            padding: 0.4rem;
+            border-radius: 4px;
+        }
+        .details-box {
+            margin-top: 1rem;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            background: #0d1117;
+            padding: 0.6rem 0.9rem;
+        }
+        .details-box summary {
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #58a6ff;
+            padding: 0.25rem 0;
+            list-style: none;
+        }
+        .details-box summary::-webkit-details-marker {
+            display: none;
+        }
+        .details-box summary:before {
+            content: '▸ ';
+        }
+        .details-box[open] summary:before {
+            content: '▾ ';
+        }
+        .details-box summary:hover {
+            color: #79c0ff;
+        }
+        .detail-row {
+            margin-top: 0.7rem;
+        }
+        .detail-label {
+            display: block;
+            font-size: 0.7rem;
+            color: #8b949e;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .detail-value-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            background: #161b22;
+            border: 1px solid #21262d;
+            border-radius: 6px;
+            padding: 0.5rem 0.6rem;
+        }
+        .detail-value-row .hash-display {
+            font-size: 0.78rem;
+            flex: 1;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <svg style="display: none;">
+        <symbol id="icon-copy" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+        </symbol>
+    </svg>
+
+    <div class="container">
+      <main>
+        <div class="header-section">
+            <img src="192.png" alt="Icon" class="header-icon" />
+            <div class="header-text">
+                <h1>Argon2id Password Generator</h1>
+                <p class="subtitle">Deterministic &bull; Stateless &bull; Client-Side</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="masterPw">Master Password</label>
+            <input type="password" id="masterPw" autocomplete="new-password" placeholder="Your master password" />
+        </div>
+
+        <div class="form-group">
+            <label for="username">Username / Login</label>
+            <input type="text" id="username" placeholder="e.g. your email or username" />
+        </div>
+
+        <div class="form-group">
+            <label for="domain">Domain / Service</label>
+            <input type="text" id="domain" placeholder="e.g. example.com" />
+        </div>
+
+        <div class="form-group">
+            <label for="saltPepper">Salt Pepper (optional)</label>
+            <input type="text" id="saltPepper" placeholder="Extra salt for additional uniqueness" />
+        </div>
+
+        <div class="button-row">
+            <button class="btn btn-primary" id="generateBtn">Generate Password</button>
+            <button class="btn btn-secondary" id="clearBtn">Clear</button>
+        </div>
+
+        <div class="error-msg" id="errorMsg"></div>
+        <div class="status-msg" id="statusMsg">Ready</div>
+
+        <div class="result-area">
+            <span class="hash-display placeholder" id="hashDisplay">Generated password will appear here</span>
+            <button class="copy-btn" data-copy-target="hashDisplay" title="Copy to clipboard">
+                <svg class="icon"><use href="#icon-copy"></use></svg>
+            </button>
+        </div>
+
+        <details class="details-box">
+            <summary>Show full hash &amp; salt</summary>
+
+            <div class="detail-row">
+                <span class="detail-label">Full Hash (Base64)</span>
+                <div class="detail-value-row">
+                    <span class="hash-display placeholder" id="fullHashDisplay">—</span>
+                    <button class="copy-btn" data-copy-target="fullHashDisplay" title="Copy full hash">
+                        <svg class="icon"><use href="#icon-copy"></use></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Salt (Hex)</span>
+                <div class="detail-value-row">
+                    <span class="hash-display placeholder" id="saltHexDisplay">—</span>
+                    <button class="copy-btn" data-copy-target="saltHexDisplay" title="Copy salt (hex)">
+                        <svg class="icon"><use href="#icon-copy"></use></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Salt (Base64)</span>
+                <div class="detail-value-row">
+                    <span class="hash-display placeholder" id="saltB64Display">—</span>
+                    <button class="copy-btn" data-copy-target="saltB64Display" title="Copy salt (base64)">
+                        <svg class="icon"><use href="#icon-copy"></use></svg>
+                    </button>
+                </div>
+            </div>
+        </details>
+
+        <div class="params-info" id="paramsInfo"></div>
+      </main>
+      <div class="footer">
+          Everything runs locally. Nothing is stored or transmitted.
+      </div>
+    </div>
+
+    <script src="argon2-bundled.min.js"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>
