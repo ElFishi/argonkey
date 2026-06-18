@@ -57,14 +57,12 @@ function bytesToBase64(bytes) {
 function renderParamsInfo() {
     const memMiB = ARGON2_CONFIG.mem / 1024;
     paramsInfo.textContent =
-//        `Argon2id: m=${memMiB}MiB • t=${ARGON2_CONFIG.time} • p=${ARGON2_CONFIG.parallelism} • dkLen=${ARGON2_CONFIG.hashLen}`;
         `Argon2id: m=${ARGON2_CONFIG.mem}kB • t=${ARGON2_CONFIG.time} • p=${ARGON2_CONFIG.parallelism} • dkLen=${ARGON2_CONFIG.hashLen}`;
 }
 
 // ---------- Helper: Build a deterministic salt ----------
 async function buildSalt(username, domain, pepper) {
-    // const raw = `${username}:${domain}:${pepper || 'sixteen'}`;
-    const raw = `${username}:${domain}:${pepper}`;
+    const raw = `${username}:${domain}:${pepper}`; // :${pepper || 'Astronaut'}`;
     const encoder = new TextEncoder();
     const bytes = encoder.encode(raw);
 
@@ -211,8 +209,6 @@ function handleCopyClick(targetId) {
     const target = document.getElementById(targetId);
     const value = target?.dataset.value;
 
-    // dataset.value is only ever populated by setDisplayValue() on a successful
-    // generation; clearDisplayValue() (used by showError()/resetUI()) sets it back to ''
     if (!value) {
         showError('Nothing to copy yet. Generate a password first.');
         return;
@@ -300,7 +296,7 @@ console.log('Argon2id Password Generator loaded.');
 console.log('Parameters:', ARGON2_CONFIG);
 
 if (!isArgon2idLoaded()) {
-    console.warn('Argon2id library not loaded. Check CDN link.');
+    console.warn('Argon2id library not loaded. Check connection.');
     setStatus('Loading Argon2id library...', 'pending');
 } else {
     console.log('Argon2id library loaded successfully.');
