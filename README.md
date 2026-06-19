@@ -1,10 +1,10 @@
-![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![JavaScript](https://img.shields.io/badge/Language-JavaScript-yellow)](https://developer.mozilla.org/en-US/docs/Web/JavaScript) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-# 🔐 ArgonKey — Argon2id Password Generator
+# ArgonKey — Argon2id Password Generator
 
 A stateless, deterministic password generator that runs entirely in your browser. No data is ever stored or transmitted. Passwords are derived on-demand from a master password and contextual information.
 
-## 📋 Table of Contents
+## Table of Contents
 - [How It Works](#how-it-works)
 - [Password Generation Process](#password-generation-process)
 - [Character Set](#character-set)
@@ -168,27 +168,27 @@ The modal JS (`openModal` / `closeModal`) is inlined in `index.html` and loaded 
 
 ## Important Notes
 
-### ✅ Not a password manager
+### Not a password manager
 There is no vault, no sync, no storage. It is a **password generator** that recreates passwords from inputs on demand.
 
-### 🔑 Master password security
+### Master password security
 - Use a strong, memorable master password (12+ characters recommended)
 - Never reuse it for any other purpose
 - It is the only secret — if forgotten, all derived passwords are irrecoverable
 
-### 🌐 Consistency matters
+### Consistency matters
 Use the same domain string every time. `google.com` and `accounts.google.com` produce different passwords. Casing does not matter — username and domain are forced to lowercase before the salt is built.
 
-### 🔄 Password rotation
+### Password rotation
 To rotate a password for a service, append a version suffix to the domain or use the Salt Pepper field (e.g. pepper `v2`).
 
-### 🔒 Client-side only
+### Client-side only
 All computation happens in your browser. The master password is cleared from the input immediately after it is read — before hashing begins. Nothing is ever sent to a server or written to any storage.
 
-### 🔍 Handle the details panel with care
+### Handle the details panel with care
 The full hash and salt are exposed for verification purposes. The salt alone is not secret, but there is no reason to paste these values into chats, screenshots, or bug reports — treat them with the same care as the password itself.
 
-### 📦 No backups
+### No backups
 There is no central storage. Remember your master password and use a consistent naming scheme for usernames and domains.
 
 ## Credits & Dependencies

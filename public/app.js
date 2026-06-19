@@ -24,7 +24,8 @@ const saltHexDisplay = document.getElementById('saltHexDisplay');
 const saltB64Display = document.getElementById('saltB64Display');
 const errorMsg = document.getElementById('errorMsg');
 const statusMsg = document.getElementById('statusMsg');
-const paramsInfo = document.getElementById('paramsInfo');
+const paramsInfoH = document.getElementById('paramsInfoH');
+const paramsInfoW = document.getElementById('paramsInfoW');
 
 // ---------- Status presentation ----------
 const STATUS_COLORS = {
@@ -57,23 +58,13 @@ function bytesToBase64(bytes) {
 function renderParamsInfo() {
     const { mem, time, parallelism, hashLen } = ARGON2_CONFIG;
 
-    paramsInfo.textContent =
-        `Argon2id: m=${mem}kB • t=${time} • p=${parallelism} • dkLen=${hashLen}`;
+    let paramsText =
+        `Argon2id: m=${mem}kB • t=${time} • p=${parallelism} • hashLen=${hashLen}`;
 
-    // Keep modal parameter spans in sync with the same config object.
-    // Spans are identified by data-param attributes in index.html.
-    const map = {
-        'param-mem':         `${mem}`,
-        'param-time':        `${time}`,
-        'param-parallelism': `${parallelism}`,
-        'param-hashlen':     `${hashLen}`,
-        'param-summary':     `type=Argon2id, m=${mem}, t=${time}, p=${parallelism}, hashLen=${hashLen}`,
-    };
-    for (const [attr, value] of Object.entries(map)) {
-        document.querySelectorAll(`[data-param="${attr}"]`).forEach(el => {
-            el.textContent = value;
-        });
-    }
+    paramsInfo.textContent  = paramsText;
+    paramsInfoH.textContent = paramsText;
+    paramsInfoW.textContent = paramsText;
+
 }
 
 // ---------- Helper: Build a deterministic salt ----------

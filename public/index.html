@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+w<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Argon2id Password Generator</title>
@@ -127,8 +127,8 @@
             <span class="step-label">Step 2 — Run Argon2id</span>
             <p>Your <em>Master Password</em> (as UTF-8 bytes) is the Argon2id <em>password</em> input.
             The salt from Step 1 is the <em>salt</em> input. The function runs with these parameters:</p>
-            <p><code>m=<span data-param="param-mem">…</span> kB &nbsp;·&nbsp; t=<span data-param="param-time">…</span> &nbsp;·&nbsp; p=<span data-param="param-parallelism">…</span> &nbsp;·&nbsp; dkLen=<span data-param="param-hashlen">…</span></code></p>
-            <p>Argon2id fills 64 MiB of memory during hashing, making brute-force attacks expensive even with
+            <p><code><span id="paramsInfoW"></span></code></p>
+            <p>Argon2id fills the configured amount of memory during hashing, making brute-force attacks expensive even with
             specialised hardware.</p>
 
             <span class="step-label">Step 3 — Encode to a password string</span>
@@ -171,7 +171,7 @@
             <ol>
                 <li>Go to an online Argon2 tool, for example <code>www.devglan.com/online-tools/argon2-hash-generator</code>.</li>
                 <li>Set the parameters:
-                    <code><span data-param="param-summary">…</span></code>.</li>
+                    <code><span id="paramsInfoH"></span></code>
                 <li>Enter your master password as the <em>password</em>.</li>
                 <li>Enter the 32 hex chars from Step 1 as the <em>salt</em>
                     (select hex input mode if available, otherwise convert to Base64 first —
@@ -196,30 +196,9 @@
         </div>
     </div>
 
-    <script>
-        function openModal(id) {
-            document.getElementById(id).classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('open');
-            document.body.style.overflow = '';
-        }
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', e => {
-                if (e.target === overlay) closeModal(overlay.id);
-            });
-        });
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal-overlay.open').forEach(o => closeModal(o.id));
-            }
-        });
-    </script>
-
+    <script src="modal.js"></script>
     <script src="argon2-bundled.min.js"></script>
     <script src="app.js"></script>
-    <script src="modal.js"></script>
 
 </body>
 </html>
