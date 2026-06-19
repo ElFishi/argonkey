@@ -1,3 +1,5 @@
+![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 # 🔐 ArgonKey — Argon2id Password Generator
 
 A stateless, deterministic password generator that runs entirely in your browser. No data is ever stored or transmitted. Passwords are derived on-demand from a master password and contextual information.
@@ -188,3 +190,7 @@ The full hash and salt are exposed for verification purposes. The salt alone is 
 
 ### 📦 No backups
 There is no central storage. Remember your master password and use a consistent naming scheme for usernames and domains.
+
+## Credits & Dependencies
+- [argon2-browser](https://github.com/Antelle/argon2-browser) - Compiled Argon2 library for browser environments (MIT License).
+
