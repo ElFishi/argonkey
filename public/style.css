@@ -14,6 +14,9 @@ body {
     margin: 0;
     padding: 20px;
 }
+a, button, input, select, textarea {
+    font-family: inherit;
+}
 .container {
     background: #161b22;
     padding: 2rem;
@@ -344,6 +347,9 @@ input::placeholder {
 }
 .modal-link:hover {
     color: #79c0ff;
+}
+a.modal-link {
+    text-decoration: underline;
 }
 .modal .note {
     margin-top: 1rem;
