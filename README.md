@@ -1,4 +1,4 @@
-# 🔐 Argon2id Password Generator
+# 🔐 ArgonKey — Argon2id Password Generator
 
 A stateless, deterministic password generator that runs entirely in your browser. No data is ever stored or transmitted. Passwords are derived on-demand from a master password and contextual information.
 
@@ -9,6 +9,7 @@ A stateless, deterministic password generator that runs entirely in your browser
 - [Full Hash & Salt Details](#full-hash--salt-details)
 - [Security Parameters](#security-parameters)
 - [Usage Example](#usage-example)
+- [Project Structure](#project-structure)
 - [Important Notes](#important-notes)
 
 ---
@@ -17,154 +18,173 @@ A stateless, deterministic password generator that runs entirely in your browser
 
 This is a **deterministic password manager**. Instead of storing passwords in a vault, it generates them mathematically from four inputs:
 
-1. **Master Password** - The secret you memorize (never stored)
-2. **Username** - Your login name for the service (forced to lowercase)
-3. **Domain** - The website or service name (forced to lowercase)
-4. **Salt Pepper** (optional) - Additional entropy for uniqueness
+1. **Master Password** — The secret you memorise (never stored, cleared from the input field immediately after reading)
+2. **Username** — Your login name for the service (forced to lowercase)
+3. **Domain** — The website or service name (forced to lowercase)
+4. **Salt Pepper** (optional) — Additional entropy for uniqueness (case-sensitive, not normalised)
 
-**Key Principle:** The same inputs will always produce the same password. This means you can regenerate any password from memory without needing a database.
+**Key principle:** The same inputs will always produce the same password. You can regenerate any password from memory without needing a database.
 
 ---
 
 ## Password Generation Process
 
-The generation follows these exact steps:
+### Step 1 — Build the deterministic salt
 
-### Step 1: Build the Deterministic Salt
-The salt is derived from the username, domain, and optional pepper:
+The username, domain, and pepper are joined into a single UTF-8 string:
+
 ```
-raw_salt = username + ":" + domain + ":" + pepper
+raw = username + ":" + domain + ":" + pepper
 ```
 
-The raw string is UTF-8 encoded and hashed with SHA-256 using the browser's `crypto.subtle` API, producing a 32-byte digest. The salt actually passed to Argon2id is the **first 16 bytes (128 bits)** of that digest — not the full 32 bytes. Because `crypto.subtle` requires a secure context (HTTPS or `localhost`), the page must be served over HTTPS for this step to work; there is no fallback salt algorithm.
+If no pepper is provided the trailing colon is still included: `username:domain:`.
 
-### Step 2: Encode the Master Password
+That string is hashed with **SHA-256** via the browser's `crypto.subtle` API (requires a secure context — HTTPS or `localhost`). The salt passed to Argon2id is the **first 16 bytes (128 bits)** of the 32-byte digest.
+
+### Step 2 — Encode the master password
+
 The master password is UTF-8 encoded into bytes.
 
-### Step 3: Compute Argon2id Hash
-The encoded password and salt are passed through the **Argon2id** key derivation function with these parameters:
-- **Memory:** 64 MiB (65,536 KiB)
-- **Iterations:** 3
-- **Parallelism:** 1
-- **Output Length:** 32 bytes (256 bits)
-- **Type:** Argon2id
+### Step 3 — Compute the Argon2id hash
 
-Argon2id is the current industry standard for password hashing. It's resistant to both GPU and side-channel attacks.
+The encoded password and derived salt are passed through **Argon2id** with these fixed parameters:
 
-The output is a 32-byte hash.
+| Parameter | Value |
+| :--- | :--- |
+| Memory (`m`) | 65,536 KiB (64 MiB) |
+| Iterations (`t`) | 3 |
+| Parallelism (`p`) | 1 |
+| Output length (`dkLen`) | 32 bytes (256 bits) |
+| Type | Argon2id |
 
-### Step 4: Convert to Base64URL (No Padding)
-The 32-byte hash is encoded using **Base64URL**:
-1. Convert bytes to standard Base64
+Argon2id is the current industry standard for password hashing. It is resistant to both GPU-based and side-channel attacks. These parameters exceed the OWASP baseline (`m=19 MiB, t=2, p=1`).
+
+The parameters displayed in the app UI (bottom bar and both info modals) are generated at runtime from the same `ARGON2_CONFIG` object — they always reflect the parameters actually used.
+
+### Step 4 — Encode to Base64URL (no padding)
+
+The 32-byte hash is converted to a password-safe string:
+
+1. Encode bytes as standard Base64
 2. Replace `+` with `-` and `/` with `_`
-3. Strip padding characters (`=`)
+3. Strip `=` padding
 
-This produces a 43-character string.
+This produces a 43-character Base64URL string.
 
-### Step 5: Truncate to 16 Characters
-The Base64URL string is truncated to 16 characters. If the string is shorter, it's padded with zeros.
+### Step 5 — Truncate to 16 characters
 
-**Final Password Length:** Exactly 16 characters
+The Base64URL string is truncated to **16 characters**. If it were shorter (it never is for a 32-byte input), it would be padded with `0`.
 
 ---
 
 ## Character Set
 
-The generated password uses only the **Base64URL** alphabet:
+The generated password uses the **Base64URL** alphabet only:
 
-| Character Type | Characters |
+| Character type | Characters |
 | :--- | :--- |
-| Uppercase Letters | `A B C D E F G H I J K L M N O P Q R S T U V W X Y Z` |
-| Lowercase Letters | `a b c d e f g h i j k l m n o p q r s t u v w x y z` |
-| Digits | `0 1 2 3 4 5 6 7 8 9` |
-| Special Characters | `-` (hyphen) and `_` (underscore) |
+| Uppercase letters | `A–Z` |
+| Lowercase letters | `a–z` |
+| Digits | `0–9` |
+| Special characters | `-` (hyphen), `_` (underscore) |
 
-**Not Included:** `! @ # $ % ^ & * ( ) [ ] { } < > ? / + =`
+**Not included:** `! @ # $ % ^ & * ( ) [ ] { } < > ? / + =`
 
-> ⚠️ **Compatibility Note:** If a service requires special characters beyond `-` and `_`, this generator will not produce a valid password for that service. You would need to modify the character mapping to include them.
+> ⚠️ **Compatibility note:** If a service requires special characters beyond `-` and `_`, this generator will not satisfy that requirement without modifying the encoding step.
 
 ---
 
 ## Full Hash & Salt Details
 
-Below the generated password, a collapsible **"Show full hash & salt"** panel exposes the raw cryptographic material behind it, for verification or advanced use cases:
+Expanding the **"Show full hash & salt"** panel reveals the raw cryptographic material behind the generated password:
 
 | Field | Contents |
 | :--- | :--- |
-| **Full Hash (Base64)** | The complete, untruncated 32-byte Argon2id output, base64-encoded. The 16-character password is just the first 16 characters of the Base64URL version of this same value. |
-| **Salt (Hex)** | The 16-byte salt (see Step 1 above) as a hexadecimal string. |
-| **Salt (Base64)** | The same 16-byte salt, base64-encoded. |
+| **Full Hash (Base64)** | The complete 32-byte Argon2id output, standard Base64-encoded. The 16-character password is the first 16 characters of the Base64URL version of this value. |
+| **Salt (Hex)** | The 16-byte salt (first 16 bytes of the SHA-256 digest) as a hexadecimal string. |
+| **Salt (Base64)** | The same 16-byte salt, standard Base64-encoded. |
 
-Each field has its own copy-to-clipboard button. The panel is collapsed by default and is mainly useful for confirming that two browsers/devices produce an identical result for the same inputs, or for piping the raw key material into another tool that needs more than 16 characters of derived key.
+Each field has its own copy-to-clipboard button. The panel is collapsed by default.
+
+A **"How to verify"** link at the bottom of the panel opens a modal that walks through reproducing the result step by step using independent online tools (a SHA-256 tool for the salt, an Argon2id tool for the hash).
 
 ---
 
 ## Security Parameters
 
-These are the fixed parameters used for Argon2id:
-
 ```javascript
 const ARGON2_CONFIG = {
-    time: 3,          // Iterations
-    mem: 65536,       // Memory in KiB (64 MiB)
-    hashLen: 32,      // Output length in bytes
-    parallelism: 1    // Single-threaded
+    time: 3,          // iterations (passes)
+    mem: 2 ** 16,     // 65,536 KiB = 64 MiB
+    hashLen: 32,      // output length in bytes
+    parallelism: 1,   // single-threaded
 };
 ```
-
-**Recommended by OWASP:** These parameters exceed the OWASP baseline recommendations for Argon2id (`m=19MiB, t=2, p=1`), providing a strong defense against brute-force attacks.
-
-> ℹ️ The small "Argon2id: m=64MiB • t=3 • p=1 • dkLen=32" line shown under the result in the app is generated at runtime directly from this same `ARGON2_CONFIG` object, so it always reflects the parameters actually used — not just a hardcoded label.
 
 ---
 
 ## Usage Example
 
 ### Inputs
-- **Master Password:** `mySecureMasterPw!`
-- **Username:** `alice`
-- **Domain:** `example.com`
-- **Salt Pepper:** (not provided)
+
+| Field | Value |
+| :--- | :--- |
+| Master Password | `mySecureMasterPw!` |
+| Username | `alice` |
+| Domain | `example.com` |
+| Salt Pepper | *(empty)* |
 
 ### Process
-1. **Salt:** SHA-256(`alice:example.com:default`) → first 16 bytes → `[16 bytes]`
-2. **Hash:** Argon2id(`mySecureMasterPw!`, salt) → `[32 bytes]`
-3. **Encoding:** Base64URL → `Xm7kRpQn3tYz5F8gHjKl9VbNcD2eS6wA` (43 chars)
-4. **Truncation:** First 16 chars → `Xm7kRpQn3tYz5F8g`
 
-**Generated Password:** `Xm7kRpQn3tYz5F8g`
+1. **Salt input string:** `alice:example.com:`
+2. **SHA-256** of that string → take first 16 bytes → salt (shown as hex in the details panel)
+3. **Argon2id** with the parameters above → 32-byte hash
+4. **Base64URL** of hash → 43-character string
+5. **Truncate** to first 16 characters → generated password
 
-### What the "Show full hash & salt" panel would display
-- **Full Hash (Base64):** `Xm7kRpQn3tYz5F8gHjKl9VbNcD2eS6wA==` (the full 32-byte hash, standard base64 with padding — this is the same value the password is derived from, just before the Base64URL conversion and truncation)
-- **Salt (Hex):** `7a3f9c1e8b2d4f60a5c7e91b3d8f2a4c`
-- **Salt (Base64):** `ej+cHostT2Clx+kbPY8qTA==`
+> The hash and salt values in the details panel can be used to verify the result independently — see the **"How to verify"** modal inside the app.
 
-(These salt and full-hash values are illustrative placeholders, not an actual computed result.)
+---
+
+## Project Structure
+
+```
+public/
+├── index.html          # App shell, form, result area, two info modals
+├── style.css           # All styles (dark GitHub-inspired theme)
+├── app.js              # Core logic: salt derivation, Argon2id, encoding, UI
+├── argon2-bundled.min.js  # Argon2id WASM library (served locally for offline use)
+├── sw.js               # Service Worker — cache-first strategy for offline PWA
+├── manifest.json       # PWA manifest (name: ArgonKey)
+├── 192.png             # App icon (192×192)
+└── favicon.ico
+```
+
+The modal JS (`openModal` / `closeModal`) is inlined in `index.html` and loaded before `app.js` so there is no load-order dependency. A separate `modal.js` reference is also present at the bottom of the script list for any future extraction.
 
 ---
 
 ## Important Notes
 
-### ✅ This is Not a Password Manager
-It doesn't store, sync, or manage passwords. It's a **password generator** that recreates them from inputs.
+### ✅ Not a password manager
+There is no vault, no sync, no storage. It is a **password generator** that recreates passwords from inputs on demand.
 
-### 🔑 Master Password Security
-- Use a strong, memorable master password (at least 12 characters)
+### 🔑 Master password security
+- Use a strong, memorable master password (12+ characters recommended)
 - Never reuse it for any other purpose
-- Your master password is the only secret. If forgotten, all passwords are irrecoverable.
+- It is the only secret — if forgotten, all derived passwords are irrecoverable
 
-### 🌐 Domain vs Subdomain
-The domain should be consistent. For `accounts.google.com`, use either `google.com` or `accounts.google.com`. Changing it will produce a different password.  Casing doesn't matter though — `Google.com` and `google.com` are treated identically, since both username and domain are lowercased before the salt is built.
+### 🌐 Consistency matters
+Use the same domain string every time. `google.com` and `accounts.google.com` produce different passwords. Casing does not matter — username and domain are forced to lowercase before the salt is built.
 
-### 🔄 Password Rotation
-This generator doesn't support password rotation out-of-the-box. To rotate a password, append a version number or date to the domain or pepper (e.g., `example.com_v2` or use the Salt Pepper field with `v2`).
+### 🔄 Password rotation
+To rotate a password for a service, append a version suffix to the domain or use the Salt Pepper field (e.g. pepper `v2`).
 
-### 🔐 Client-Side Only
-All computations happen in your browser. The master password is never transmitted or stored. The page can work offline once loaded.
+### 🔒 Client-side only
+All computation happens in your browser. The master password is cleared from the input immediately after it is read — before hashing begins. Nothing is ever sent to a server or written to any storage.
 
-### 🔍 Handle the Full Hash & Salt Panel Carefully
-The optional "Show full hash & salt" panel is meant for verification and debugging, not everyday use. The salt isn't secret on its own, but there's no good reason to paste the full hash or salt into chats, screenshots, or tickets — treat them with the same care you'd give the password itself.
+### 🔍 Handle the details panel with care
+The full hash and salt are exposed for verification purposes. The salt alone is not secret, but there is no reason to paste these values into chats, screenshots, or bug reports — treat them with the same care as the password itself.
 
-### 📦 No Backups
-Since there's no central storage, you must remember your master password and the structure of your inputs. Consider writing down a "hint" or using a consistent naming scheme for domains.
-
+### 📦 No backups
+There is no central storage. Remember your master password and use a consistent naming scheme for usernames and domains.
