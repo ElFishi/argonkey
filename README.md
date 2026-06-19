@@ -148,6 +148,28 @@ const ARGON2_CONFIG = {
 
 ---
 
+## Progressive Web App (PWA)
+
+ArgonKey is installable as a PWA and runs **fully offline** after the first visit.
+
+### Installation
+
+On desktop (Chrome, Edge): click the install icon in the address bar, or open the browser menu and choose **"Install ArgonKey"**. On Android: tap **"Add to Home Screen"** in the browser menu. On iOS (Safari): tap the Share button and choose **"Add to Home Screen"**.
+
+Once installed, the app opens in standalone mode (no browser chrome) and behaves like a native app.
+
+### How offline works
+
+On the first load, the Service Worker (`sw.js`) caches all required assets (cf. [project structure](#project-structure)).
+
+All subsequent loads are served from that cache. Because the Argon2id library (`argon2-bundled.min.js`) is served locally rather than from a CDN, **no network connection is needed at any point after installation** — not even for the first computation.
+
+The Service Worker uses a **cache-first** strategy: cached assets are served immediately, with a network fetch only as a fallback for uncached requests. This means the app loads instantly and works on a plane, in a basement, or anywhere else without connectivity.
+
+> ℹ️ If you deploy an update, increment `CACHE_NAME` in `sw.js` (e.g. `ArK-cache-v2`) to force clients to fetch and cache the new assets on next load.
+
+---
+
 ## Project Structure
 
 ```

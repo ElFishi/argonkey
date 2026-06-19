@@ -64,7 +64,6 @@ function renderParamsInfo() {
     paramsInfo.textContent  = paramsText;
     paramsInfoH.textContent = paramsText;
     paramsInfoW.textContent = paramsText;
-
 }
 
 // ---------- Helper: Build a deterministic salt ----------
