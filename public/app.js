@@ -55,9 +55,25 @@ function bytesToBase64(bytes) {
 
 // ---------- Render the params-info footer from the actual config in use ----------
 function renderParamsInfo() {
-    const memMiB = ARGON2_CONFIG.mem / 1024;
+    const { mem, time, parallelism, hashLen } = ARGON2_CONFIG;
+
     paramsInfo.textContent =
-        `Argon2id: m=${ARGON2_CONFIG.mem}kB • t=${ARGON2_CONFIG.time} • p=${ARGON2_CONFIG.parallelism} • dkLen=${ARGON2_CONFIG.hashLen}`;
+        `Argon2id: m=${mem}kB • t=${time} • p=${parallelism} • dkLen=${hashLen}`;
+
+    // Keep modal parameter spans in sync with the same config object.
+    // Spans are identified by data-param attributes in index.html.
+    const map = {
+        'param-mem':         `${mem}`,
+        'param-time':        `${time}`,
+        'param-parallelism': `${parallelism}`,
+        'param-hashlen':     `${hashLen}`,
+        'param-summary':     `type=Argon2id, m=${mem}, t=${time}, p=${parallelism}, hashLen=${hashLen}`,
+    };
+    for (const [attr, value] of Object.entries(map)) {
+        document.querySelectorAll(`[data-param="${attr}"]`).forEach(el => {
+            el.textContent = value;
+        });
+    }
 }
 
 // ---------- Helper: Build a deterministic salt ----------

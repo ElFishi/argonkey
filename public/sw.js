@@ -2,7 +2,9 @@ const CACHE_NAME = 'ArK-cache-v1';
 const ASSETS = [
     '/',
     'index.html',
+    'style.css',
     'app.js',
+    'modal.js',
     'argon2-bundled.min.js',
     'manifest.json',
     '192.png',

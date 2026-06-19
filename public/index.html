@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Generate strong, deterministic passwords from a master password using Argon2id. Stateless, offline-capable — no passwords are stored or transmitted.">
     <link rel="manifest" href="manifest.json">
-    <style>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <!-- style>
         * {
             box-sizing: border-box;
             margin: 0;
@@ -125,7 +126,7 @@
         .btn-secondary:hover {
             background: #30363d;
         }
-        
+
         .copy-btn {
             background: none;
             border: none;
@@ -146,7 +147,7 @@
         .copy-btn .icon {
             width: 1.15rem;
             height: 1.15rem;
-            fill: currentColor; 
+            fill: currentColor;
         }
 
         .result-area {
@@ -188,14 +189,14 @@
         .footer {
             margin-top: 1.5rem;
             font-size: 0.7rem;
-            color: #484f58;
+            color: #8b949e;
             text-align: center;
             border-top: 1px solid #21262d;
             padding-top: 1rem;
         }
         .params-info {
             font-size: 0.75rem;
-            color: #484f58;
+            color: #8b949e;
             text-align: center;
             margin-top: 0.5rem;
             background: #0d1117;
@@ -255,7 +256,115 @@
             word-break: break-all;
             font-family: 'Courier New', monospace;
         }
-    </style>
+
+        /* ---- Modals ---- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 1.25rem;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        .modal {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 14px;
+            max-width: 560px;
+            width: 100%;
+            max-height: 88vh;
+            overflow-y: auto;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+            padding: 1.75rem 1.75rem 1.5rem;
+            position: relative;
+        }
+        .modal h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin-bottom: 1.1rem;
+        }
+        .modal p, .modal li {
+            font-size: 0.85rem;
+            color: #c9d1d9;
+            line-height: 1.65;
+        }
+        .modal p + p {
+            margin-top: 0.75rem;
+        }
+        .modal ol {
+            padding-left: 1.3rem;
+            margin-top: 0.5rem;
+        }
+        .modal li {
+            margin-bottom: 0.55rem;
+        }
+        .modal code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            padding: 0.1em 0.4em;
+            color: #79c0ff;
+            word-break: break-all;
+        }
+        .modal .step-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #8b949e;
+            margin-top: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 1.3rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.2rem 0.45rem;
+            border-radius: 4px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .modal-close:hover {
+            background: #21262d;
+            color: #f0f6fc;
+        }
+        .modal-link {
+            background: none;
+            border: none;
+            color: #58a6ff;
+            font-size: inherit;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: none;
+            text-underline-offset: 2px;
+        }
+        .modal-link:hover {
+            color: #79c0ff;
+        }
+        .modal .note {
+            margin-top: 1rem;
+            padding: 0.6rem 0.8rem;
+            background: #0d1117;
+            border-left: 3px solid #238636;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+    </style -->
 </head>
 <body>
 
@@ -342,17 +451,134 @@
                     </button>
                 </div>
             </div>
+            <div class="detail-row" style="margin-top:1rem; text-align:right;">
+                <button class="modal-link" style="font-size:0.78rem;" onclick="openModal('modalCheckOverlay')">How to verify</button>
+            </div>
+
         </details>
 
         <div class="params-info" id="paramsInfo"></div>
       </main>
       <div class="footer">
           Everything runs locally. Nothing is stored or transmitted.
+          &nbsp;·&nbsp;
+          <button class="modal-link" onclick="openModal('modalWhatOverlay')">What it does</button>
       </div>
     </div>
 
+    <!-- Modal: What it does -->
+    <div class="modal-overlay" id="modalWhatOverlay" role="dialog" aria-modal="true" aria-labelledby="modalWhatTitle">
+        <div class="modal">
+            <button class="modal-close" aria-label="Close" onclick="closeModal('modalWhatOverlay')">✕</button>
+            <h2 id="modalWhatTitle">How your password is derived</h2>
+
+            <p>Every password is produced by feeding three pieces of information into <strong>Argon2id</strong>, a
+            memory-hard key derivation function. Because all steps are deterministic, entering the same inputs always
+            produces the same output — yet nothing needs to be stored anywhere.</p>
+
+            <span class="step-label">Step 1 — Build the salt</span>
+            <p>The <em>Username</em>, <em>Domain</em>, and optional <em>Salt Pepper</em> are joined into a single
+            string <code>username:domain:pepper</code> (username and domain are forced lowercase, pepper as entered). That string is hashed with
+            <strong>SHA-256</strong>, and the first 16 bytes of the digest are used as the Argon2id salt.
+            This ties the salt uniquely to the service without requiring you to store it.</p>
+
+            <span class="step-label">Step 2 — Run Argon2id</span>
+            <p>Your <em>Master Password</em> (as UTF-8 bytes) is the Argon2id <em>password</em> input.
+            The salt from Step 1 is the <em>salt</em> input. The function runs with these parameters:</p>
+            <p><code>m=<span data-param="param-mem">…</span> kB &nbsp;·&nbsp; t=<span data-param="param-time">…</span> &nbsp;·&nbsp; p=<span data-param="param-parallelism">…</span> &nbsp;·&nbsp; dkLen=<span data-param="param-hashlen">…</span></code></p>
+            <p>Argon2id fills 64 MiB of memory during hashing, making brute-force attacks expensive even with
+            specialised hardware.</p>
+
+            <span class="step-label">Step 3 — Encode to a password string</span>
+            <p>The 32-byte output is Base64-encoded, <code>+</code> and <code>/</code> replaced with
+            <code>-</code> and <code>_</code> for compatibility, padding stripped, and the result trimmed to
+            <strong>16 characters</strong>. That is the password shown in the result box.</p>
+
+            <div class="note">
+                The master password is cleared from the input field immediately after it is read —
+                before hashing begins. Nothing is ever sent to a server or written to storage.
+                The full 32-byte hash and the salt are shown in the details section so you can
+                verify or migrate the result independently.
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: How to check -->
+    <div class="modal-overlay" id="modalCheckOverlay" role="dialog" aria-modal="true" aria-labelledby="modalCheckTitle">
+        <div class="modal">
+            <button class="modal-close" aria-label="Close" onclick="closeModal('modalCheckOverlay')">✕</button>
+            <h2 id="modalCheckTitle">🔬 How to verify independently</h2>
+
+            <p>You can reproduce the exact same result using any standard SHA-256 tool and any standard Argon2id
+            tool — without this app. This confirms the implementation is correct and gives you a recovery path if
+            the app is ever unavailable.</p>
+
+            <span class="step-label">Step 1 — Reproduce the salt</span>
+            <ol>
+                <li>Go to an online SHA-256 tool, for example
+                    <code>emn178.github.io/online-tools/sha256.html</code>.</li>
+                <li>Enter the combined string: <code>username:domain:pepper</code>
+                    (use exactly the values you entered; username and domain are lowercased, pepper as-is,
+                    keep the trailing colon if pepper is empty: <code>username:domain:</code>).</li>
+                <li>Make sure the tool hashes the <em>UTF-8 text</em> input (not a file) and outputs hex.</li>
+                <li>Take the first 32 hex characters of the result (= 16 bytes). This is your salt.
+                    It should match the <em>Salt (Hex)</em> shown above.</li>
+            </ol>
+
+            <span class="step-label">Step 2 — Run Argon2id</span>
+            <ol>
+                <li>Go to an online Argon2 tool, for example <code>www.devglan.com/online-tools/argon2-hash-generator</code>.</li>
+                <li>Set the parameters:
+                    <code><span data-param="param-summary">…</span></code>.</li>
+                    <code>p=1</code>, <code>hashLen=32</code>.</li>
+                <li>Enter your master password as the <em>password</em>.</li>
+                <li>Enter the 32 hex chars from Step 1 as the <em>salt</em>
+                    (select hex input mode if available, otherwise convert to Base64 first —
+                    the Salt (Base64) value shown above is ready to paste).</li>
+                <li>Run the hash. The raw output bytes, Base64-encoded, should match the
+                    <em>Full Hash (Base64)</em> shown above.</li>
+            </ol>
+
+            <span class="step-label">Step 3 — Reproduce the password string</span>
+            <ol>
+                <li>Take the Base64 output from Step 2.</li>
+                <li>Replace all <code>+</code> with <code>-</code> and all <code>/</code> with <code>_</code>.
+                    Remove any trailing <code>=</code> padding.</li>
+                <li>Keep the first <strong>16 characters</strong>. This is your password.</li>
+            </ol>
+
+            <div class="note">
+                Tip: the Salt (Hex) and Full Hash (Base64) in the details section are the checkpoints —
+                if Step 1 matches Salt (Hex) and Step 2 matches Full Hash (Base64), your independent
+                run is identical to what this app produced.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) closeModal(overlay.id);
+            });
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.open').forEach(o => closeModal(o.id));
+            }
+        });
+    </script>
+
     <script src="argon2-bundled.min.js"></script>
     <script src="app.js"></script>
+    <script src="modal.js"></script>
 
 </body>
 </html>
