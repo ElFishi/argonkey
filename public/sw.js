@@ -1,13 +1,13 @@
 const CACHE_NAME = 'ArK-cache-v1';
 const ASSETS = [
     '/',
-    '/index.html',
-    '/app.js',
-    '/argon2-bundled.min.js',
-    '/manifest.json',
-    '/192.png',
-    '/512.png',
-    '/favicon.ico'
+    'index.html',
+    'app.js',
+    'argon2-bundled.min.js',
+    'manifest.json',
+    '192.png',
+    '512.png',
+    'favicon.ico'
 ];
 
 // Install and cache assets
