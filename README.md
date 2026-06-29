@@ -12,7 +12,7 @@ A stateless, deterministic password generator that runs entirely in your browser
 - [Security Parameters](#security-parameters)
 - [Usage Example](#usage-example)
 - [URL Parameters](#url-parameters--prefilling-fields)
-- [Progressive Web App](#-progressive-web-app-pwa)
+- [Progressive Web App](#progressive-web-app-pwa)
 - [Project Structure](#project-structure)
 - [Important Notes](#important-notes)
 
