@@ -301,6 +301,25 @@ resetUI();
 console.log('Argon2id Password Generator loaded.');
 console.log('Parameters:', ARGON2_CONFIG);
 
+// ---------- Prefill fields from URL parameters ----------
+// Supported: ?user=...&domain=...&pepper=...
+// Master password is intentionally never accepted via URL.
+(function prefillFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const user   = params.get('user')   ?? params.get('name') ?? params.get('username');
+    const domain = params.get('domain') ?? params.get('site');
+    const pepper = params.get('pepper') ?? params.get('salt');
+
+    if (user)   usernameInput.value   = user.toLowerCase();
+    if (domain) domainInput.value     = domain.toLowerCase();
+    if (pepper) saltPepperInput.value = pepper;
+
+    if (user || domain || pepper) {
+        console.log('Prefilled from URL params:', { user, domain, pepper: pepper ? '***' : undefined });
+        masterPwInput.focus();
+    }
+})();
+
 if (!isArgon2idLoaded()) {
     console.warn('Argon2id library not loaded. Check connection.');
     setStatus('Loading Argon2id library...', 'pending');

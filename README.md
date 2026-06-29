@@ -11,6 +11,8 @@ A stateless, deterministic password generator that runs entirely in your browser
 - [Full Hash & Salt Details](#full-hash--salt-details)
 - [Security Parameters](#security-parameters)
 - [Usage Example](#usage-example)
+- [URL Parameters](#url-parameters--prefilling-fields)
+- [Progressive Web App](#-progressive-web-app-pwa)
 - [Project Structure](#project-structure)
 - [Important Notes](#important-notes)
 
@@ -146,6 +148,26 @@ const ARGON2_CONFIG = {
 
 > The hash and salt values in the details panel can be used to verify the result independently — see the **"How to verify"** modal inside the app.
 
+---
+
+## URL Parameters — Prefilling Fields
+ 
+Fields can be prefilled by passing URL query parameters, useful for bookmarks or sharing a pre-configured link:
+ 
+```
+https://argonkey.web.app/?user=alice&domain=example.com&pepper=MyPepper
+```
+ 
+| Parameter | Alias | | Field filled | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| `user` | `name` | `username` | Username / Login | Lowercased automatically |
+| `domain` | `site` | | Domain / Service | Lowercased automatically |
+| `pepper` | `salt` | | Salt Pepper | Case-sensitive, not normalised |
+ 
+The master password is **never** accepted via URL — it would appear in server logs, browser history, and referrer headers. When any parameter is present, focus is placed on the master password field so the user can complete and generate immediately.
+ 
+Special characters in parameter values must be percent-encoded as usual (e.g. `&` → `%26`).
+ 
 ---
 
 ## Progressive Web App (PWA)
