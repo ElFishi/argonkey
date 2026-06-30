@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ArK-cache-v1';
+const CACHE_NAME = 'ArK-cache-__COMMIT_SHA__';
 const ASSETS = [
     '/',
     'index.html',
@@ -18,6 +18,20 @@ self.addEventListener('install', event => {
         caches.open(CACHE_NAME).then(cache => {
             return cache.addAll(ASSETS);
         })
+    );
+    self.skipWaiting();
+});
+
+// Activate: delete any caches that don't match the current version
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames
+                    .filter(name => name.startsWith('ArK-cache-') && name !== CACHE_NAME)
+                    .map(name => caches.delete(name))
+            );
+        }).then(() => self.clients.claim())
     );
 });
 
