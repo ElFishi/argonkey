@@ -349,7 +349,11 @@ if (!isArgon2idLoaded()) {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker registered.', reg))
+            .then(async reg => {
+                // Wait a sec for the service worker to be active and the caches are defined
+                const cacheNames = await window.caches.keys();
+                console.log(`Service Worker registered. Existing caches: ${cacheNames.join(', ') || 'Keine'}`, reg);
+            })
             .catch(err => console.error('Service Worker Error:', err));
     });
 }
