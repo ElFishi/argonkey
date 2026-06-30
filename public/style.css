@@ -82,6 +82,24 @@ input:focus {
 input::placeholder {
     color: #484f58;
 }
+.pw-input-row { position: relative; display: flex; align-items: center; }
+.pw-input-row input#masterPw { width: 100%; padding-right: 2.4rem; }
+.pw-toggle-btn {
+    position: absolute;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    fill: #58a6ff;
+    color: inherit;
+    opacity: 0.7;
+}
+.pw-toggle-btn:hover { opacity: 1; }
+.pw-toggle-btn .icon { width: 16px; height: 16px; }
 .button-row {
     display: flex;
     gap: 0.75rem;
@@ -249,8 +267,6 @@ input::placeholder {
     word-break: break-all;
     font-family: 'Courier New', monospace;
 }
-
-/* ---- Modals ---- */
 .modal-overlay {
     display: none;
     position: fixed;

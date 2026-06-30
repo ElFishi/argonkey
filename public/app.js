@@ -13,6 +13,7 @@ const ARGON2_CONFIG = {
 
 // ---------- DOM References ----------
 const masterPwInput = document.getElementById('masterPw');
+const pwToggleBtn = document.getElementById('pwToggleBtn');
 const usernameInput = document.getElementById('username');
 const domainInput = document.getElementById('domain');
 const saltPepperInput = document.getElementById('saltPepper');
@@ -262,6 +263,10 @@ function handleClear() {
     usernameInput.value = '';
     domainInput.value = '';
     saltPepperInput.value = '';
+    masterPwInput.type = 'password';
+    pwToggleBtn.setAttribute('aria-pressed', 'false');
+    pwToggleBtn.setAttribute('aria-label', 'Show password');
+    pwToggleBtn.querySelector('use').setAttribute('href', '#icon-eye-slash');
     resetUI();
     masterPwInput.focus();
 }
@@ -275,12 +280,24 @@ function forceLowercase(e) {
     input.setSelectionRange(selectionStart, selectionEnd);
 }
 
+// ---------- Show/hide Master Password ----------
+function handlePwToggle() {
+    const isHidden = masterPwInput.type === 'password';
+    masterPwInput.type = isHidden ? 'text' : 'password';
+    pwToggleBtn.setAttribute('aria-pressed', String(isHidden));
+    pwToggleBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    const useEl = pwToggleBtn.querySelector('use');
+    useEl.setAttribute('href', isHidden ? '#icon-eye' : '#icon-eye-slash');
+    masterPwInput.focus({ preventScroll: true });
+}
+
 // ---------- Event Listeners ----------
 usernameInput.addEventListener('input', forceLowercase);
 domainInput.addEventListener('input', forceLowercase);
 
 generateBtn.addEventListener('click', handleGenerate);
 clearBtn.addEventListener('click', handleClear);
+pwToggleBtn.addEventListener('click', handlePwToggle);
 
 document.querySelectorAll('.copy-btn[data-copy-target]').forEach((btn) => {
     btn.addEventListener('click', () => handleCopyClick(btn.dataset.copyTarget));
