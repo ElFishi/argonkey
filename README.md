@@ -151,22 +151,40 @@ const ARGON2_CONFIG = {
 ---
 
 ## URL Parameters — Prefilling Fields
- 
+
 Fields can be prefilled by passing URL query parameters, useful for bookmarks or sharing a pre-configured link:
- 
+
 ```
 https://argonkey.web.app/?user=alice&domain=example.com&pepper=MyPepper
 ```
- 
-| Parameter | Alias | | Field filled | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| `user` | `name` | `username` | Username / Login | Lowercased automatically |
-| `domain` | `site` | | Domain / Service | Lowercased automatically |
-| `pepper` | `salt` | | Salt Pepper | Case-sensitive, not normalised |
- 
-The master password is **never** accepted via URL — it would appear in server logs, browser history, and referrer headers. When any parameter is present, focus is placed on the master password field so the user can complete and generate immediately.
- 
+
+| Parameter | Aliases | Field filled | Notes |
+| :--- | :--- | :--- | :--- |
+| `user` | `name`, `username` | Username / Login | Lowercased automatically |
+| `domain` | `site` | Domain / Service | Lowercased automatically |
+| `pepper` | `salt` | Salt Pepper | Case-sensitive, not normalised |
+
+When any query parameter is present and no master password is supplied, focus is placed on the master password field so the user can complete and generate immediately.
+
 Special characters in parameter values must be percent-encoded as usual (e.g. `&` → `%26`).
+
+### Auto-generate via URL fragment
+
+To trigger an **automatic password generation** without any user interaction, the master password can be passed as the URL fragment (`#`). The fragment is never sent to the server by the browser — not in the request, not in `Referer` headers.
+
+```
+https://argonkey.web.app/?user=alice&domain=example.com#MyMasterPassword
+```
+
+When a fragment is present the app:
+
+1. Strips the fragment from the browser history entry immediately (before hashing begins), via `history.replaceState`
+2. Fills `user`, `domain`, and `pepper` from the query parameters as usual
+3. Runs the full Argon2id derivation with the fragment as the master password
+4. Displays the result — **the master password is never written to the input field**
+5. Shows the status message *"Password generated from URL parameters. You may need to delete the request from the browser history."*
+
+> ⚠️ **Privacy note:** `history.replaceState` removes the fragment from the *current* history entry, but cannot remove entries already written before the page loaded (e.g. if the user clicked a link or typed the URL). Use this feature only on personal devices where you control the browser history, and clear history afterwards if in doubt. Browser extensions with tab-URL access can also read the fragment before JS executes.
  
 ---
 
@@ -196,17 +214,18 @@ The Service Worker uses a **cache-first** strategy: cached assets are served imm
 
 ```
 public/
-├── index.html          # App shell, form, result area, two info modals
-├── style.css           # All styles (dark GitHub-inspired theme)
-├── app.js              # Core logic: salt derivation, Argon2id, encoding, UI
+├── index.html             # App shell, form, result area, two info modals
+├── style.css              # All styles (dark GitHub-inspired theme)
+├── app.js                 # Core logic: salt derivation, Argon2id, encoding, UI
+├── modal.js               # openModal / closeModal helpers
 ├── argon2-bundled.min.js  # Argon2id WASM library (served locally for offline use)
-├── sw.js               # Service Worker — cache-first strategy for offline PWA
-├── manifest.json       # PWA manifest (name: ArgonKey)
-├── 192.png             # App icon (192×192)
+├── sw.js                  # Service Worker — cache-first strategy for offline PWA
+├── manifest.json          # PWA manifest (name: ArgonKey)
+├── 192.png                # App icon (192×192)
 └── favicon.ico
 ```
 
-The modal JS (`openModal` / `closeModal`) is inlined in `index.html` and loaded before `app.js` so there is no load-order dependency. A separate `modal.js` reference is also present at the bottom of the script list for any future extraction.
+The modal JS (`openModal` / `closeModal`) lives in `modal.js`, loaded before `app.js` and `argon2-bundled.min.js` so there is no load-order dependency.
 
 ---
 

@@ -3,13 +3,16 @@
 // Using @argon2/argon2 library (browser-ready)
 // ============================================================
 
-// ---------- RECOMMENDED PARAMETERS ----------
-const ARGON2_CONFIG = {
+// ---------- RECOMMENDED PARAMETERS (defaults) ----------
+const ARGON2_DEFAULTS = {
     time: 3,                  // iterations (passes)
     mem: 2 ** 16,             // 64 MiB (in KiB)
     hashLen: 32,              // 32 bytes => 256-bit derived key
     parallelism: 1,
 };
+
+// Active config — may be overridden by URL parameters before first use.
+let ARGON2_CONFIG = { ...ARGON2_DEFAULTS };
 
 // ---------- DOM References ----------
 const masterPwInput = document.getElementById('masterPw');
@@ -67,9 +70,39 @@ function renderParamsInfo() {
     paramsInfoW.textContent = paramsText;
 }
 
+// ---------- Apply Argon2id parameters from URL query string ----------
+// Supported: ?m=65536&t=3&p=1&len=32
+// All values are validated and clamped to safe ranges; invalid values are ignored.
+function parseArgon2Params() {
+    const params = new URLSearchParams(window.location.search);
+
+    const parse = (key, current, min, max, integer = true) => {
+        const raw = params.get(key);
+        if (raw === null) return current;
+        const val = integer ? parseInt(raw, 10) : parseFloat(raw);
+        if (!Number.isFinite(val) || val < min || val > max) {
+            console.warn(`ArgonKey: ignoring invalid URL param ${key}=${raw} (allowed ${min}–${max})`);
+            return current;
+        }
+        return val;
+    };
+
+    ARGON2_CONFIG = {
+        mem:         parse('m',   ARGON2_DEFAULTS.mem,         1024,   2 ** 20), // 1 MiB – 1 GiB
+        time:        parse('t',   ARGON2_DEFAULTS.time,           1,      999),
+        parallelism: parse('p',   ARGON2_DEFAULTS.parallelism,    1,       64),
+        hashLen:     parse('len', ARGON2_DEFAULTS.hashLen,        16,      64),
+    };
+
+    const changed = Object.keys(ARGON2_CONFIG).some(k => ARGON2_CONFIG[k] !== ARGON2_DEFAULTS[k]);
+    if (changed) {
+        console.log('ArgonKey: Argon2id parameters overridden via URL:', ARGON2_CONFIG);
+    }
+}
+
 // ---------- Helper: Build a deterministic salt ----------
 async function buildSalt(username, domain, pepper) {
-    const raw = `${username}:${domain}:${pepper}`; // :${pepper || 'Astronaut'}`;
+    const raw = `${username}:${domain}:${pepper}`; // :${pepper || 'Mudshark'}`;
     const encoder = new TextEncoder();
     const bytes = encoder.encode(raw);
 
@@ -158,12 +191,12 @@ function clearDisplayValue(el, placeholderText) {
     el.dataset.value = '';
 }
 
-function displayResult(passwordString, hashBytes, salt) {
+function displayResult(passwordString, hashBytes, salt, statusMessage = 'Password generated!') {
     setDisplayValue(hashDisplay, passwordString);
     setDisplayValue(fullHashDisplay, bytesToBase64(hashBytes));
     setDisplayValue(saltHexDisplay, bytesToHex(salt));
     setDisplayValue(saltB64Display, bytesToBase64(salt));
-    setStatus('Password generated!', 'success');
+    setStatus(statusMessage, 'success');
     errorMsg.textContent = '';
 }
 
@@ -186,13 +219,9 @@ function resetUI() {
 }
 
 // ---------- Main Generate Action ----------
-async function handleGenerate() {
-    const masterPw = masterPwInput.value;
-	masterPwInput.value = '';
-    const username = usernameInput.value.trim().toLowerCase();
-    const domain = domainInput.value.trim().toLowerCase();
-    const pepper = saltPepperInput.value.trim();
 
+// Core: pure logic, no DOM reads. Shared by both the UI and URL-hash paths.
+async function runGenerate(masterPw, username, domain, pepper, statusMessage = 'Password generated!') {
     generateBtn.disabled = true;
     generateBtn.textContent = 'Hashing...';
     setStatus('Computing Argon2id... (this may take a moment)', 'pending');
@@ -202,13 +231,23 @@ async function handleGenerate() {
         const salt = await buildSalt(username, domain, pepper);
         const hashBytes = await generatePassword(masterPw, username, domain, salt);
         const password = bytesToPassword(hashBytes, 16);
-        displayResult(password, hashBytes, salt);
+        displayResult(password, hashBytes, salt, statusMessage);
     } catch (err) {
         showError(err.message);
     } finally {
         generateBtn.disabled = false;
         generateBtn.textContent = 'Generate Password';
     }
+}
+
+// UI path: reads and clears the password field, then delegates to runGenerate().
+async function handleGenerate() {
+    const masterPw = masterPwInput.value;
+    masterPwInput.value = '';
+    const username = usernameInput.value.trim().toLowerCase();
+    const domain   = domainInput.value.trim().toLowerCase();
+    const pepper   = saltPepperInput.value.trim();
+    await runGenerate(masterPw, username, domain, pepper);
 }
 
 // ---------- Copy to Clipboard ----------
@@ -292,6 +331,9 @@ function handlePwToggle() {
 }
 
 // ---------- Event Listeners ----------
+
+
+
 usernameInput.addEventListener('input', forceLowercase);
 domainInput.addEventListener('input', forceLowercase);
 
@@ -313,15 +355,17 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------- Initial state ----------
+parseArgon2Params();   // must run before renderParamsInfo() and prefillFromUrl()
 renderParamsInfo();
 resetUI();
 console.log('Argon2id Password Generator loaded.');
 console.log('Parameters:', ARGON2_CONFIG);
 
 // ---------- Prefill fields from URL parameters ----------
-// Supported: ?user=...&domain=...&pepper=...
-// Master password is intentionally never accepted via URL.
-(function prefillFromUrl() {
+// Query params (?user=, ?domain=, ?pepper=) fill the visible fields.
+// Fragment (#) carries the master password — never sent to the server,
+// never written to the input field. Stripped from history immediately.
+(async function prefillFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const user   = params.get('user')   ?? params.get('name') ?? params.get('username');
     const domain = params.get('domain') ?? params.get('site');
@@ -331,7 +375,21 @@ console.log('Parameters:', ARGON2_CONFIG);
     if (domain) domainInput.value     = domain.toLowerCase();
     if (pepper) saltPepperInput.value = pepper;
 
-    if (user || domain || pepper) {
+    const masterPw = window.location.hash.substring(1);
+
+    if (masterPw) {
+        // Purge the fragment from history before doing anything else.
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+        // Run directly — master password never touches the input field.
+        await runGenerate(
+            masterPw,
+            (user   ?? '').toLowerCase(),
+            (domain ?? '').toLowerCase(),
+            pepper  ?? '',
+            'Password generated from URL parameters. You may need to delete the request from the browser history.'
+        );
+    } else if (user || domain || pepper) {
         console.log('Prefilled from URL params:', { user, domain, pepper: pepper ? '***' : undefined });
         masterPwInput.focus();
     }
