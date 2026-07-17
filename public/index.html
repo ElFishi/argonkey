@@ -161,6 +161,10 @@
             <p><code><span id="paramsInfoW"></span></code></p>
             <p>Argon2id fills the configured amount of memory during hashing, making brute-force attacks expensive even with
             specialised hardware.</p>
+            <p>The default parameters can be overridden via URL query parameters (<code>?m=</code>, <code>?t=</code>,
+            <code>?p=</code>, <code>?len=</code>). When overridden, the active values
+            are shown above and in the bottom bar. <strong>Changing any parameter produces a different password,</strong>
+            so always use the same parameters when regenerating a password for a given service.</p>
 
             <span class="step-label">Step 3 — Encode to a password string</span>
             <p>The 32-byte output is Base64-encoded, <code>+</code> and <code>/</code> replaced with

@@ -125,6 +125,8 @@ const ARGON2_CONFIG = {
 };
 ```
 
+These defaults exceed the OWASP baseline (`m=19 MiB, t=2, p=1`). They can be overridden via URL parameters — see [URL Parameters](#url-parameters--prefilling-fields).
+
 ---
 
 ## Usage Example
@@ -167,6 +169,25 @@ https://argonkey.web.app/?user=alice&domain=example.com&pepper=MyPepper
 When any query parameter is present and no master password is supplied, focus is placed on the master password field so the user can complete and generate immediately.
 
 Special characters in parameter values must be percent-encoded as usual (e.g. `&` → `%26`).
+
+### Overriding Argon2id Parameters via URL
+
+The Argon2id hashing parameters can also be overridden via URL query parameters. This is useful for compatibility with other tools or for adjusting the security/performance trade-off:
+
+```
+https://argonkey.web.app/?user=alice&domain=example.com&m=65536&t=3&p=1&len=32
+```
+
+| Parameter | Default | Allowed Range | Description |
+| :--- | :--- | :--- | :--- |
+| `m` | 65,536 | 1,024 – 1,048,576 | Memory cost in KiB (64 MiB default) |
+| `t` | 3 | 1 – 999 | Number of iterations (passes) |
+| `p` | 1 | 1 – 64 | Parallelism (threads) |
+| `len` | 32 | 16 – 64 | Output hash length in bytes |
+
+Invalid values are silently ignored and the default is used instead. A console warning is logged for each rejected parameter. When parameters are overridden, the bottom bar and both info modals display the active values.
+
+> ⚠️ **Consistency warning:** Changing any parameter produces a completely different password. Only override parameters if you are certain the same overrides will be used every time you need to regenerate this password. Bookmark the URL with parameters included.
 
 ### Auto-generate via URL fragment
 
